@@ -2,7 +2,6 @@
 # CLion / JetBrains
 # -------------------------
 Judge/
-*/.idea/
 .idea/
 cmake-build-*/
 cmake-build-debug*/
