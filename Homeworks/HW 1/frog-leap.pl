@@ -1,11 +1,6 @@
 append([], L2, L2).
 append([H|T], L2, [H|R]):- append(T, L2, R).
 
-reverse(L, RL):- rev(L, [], RL).
-rev([], Stack, Stack).
-rev([H|T], Stack, R):- rev(T, [H|Stack], R).
-
-
 repeatList([], 0, _).
 repeatList([P|XS], N, P):- N > 0, N1 is N - 1, repeatList(XS, N1, P). 
 
