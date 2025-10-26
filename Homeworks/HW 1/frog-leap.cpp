@@ -42,17 +42,17 @@ std::vector<std::vector<char>> dfs(std::vector<char>& field, int n)
     }
 
     int emptyIndex = std::find(field.begin(), field.end(), '_') - field.begin();
-    if (emptyIndex - 1 >= 0 && field[emptyIndex - 1] == '>')
+    if (emptyIndex + 2 < field.size() && field[emptyIndex + 2] == '<')
     {
-        std::swap(field[emptyIndex], field[emptyIndex - 1]);
+        std::swap(field[emptyIndex], field[emptyIndex + 2]);
         auto result = dfs(field, n);
         if (result.size() > 0)
         {
-            std::swap(field[emptyIndex], field[emptyIndex - 1]);
+            std::swap(field[emptyIndex], field[emptyIndex + 2]);
             result.push_back(field);
             return result;
         }
-        std::swap(field[emptyIndex], field[emptyIndex - 1]);
+        std::swap(field[emptyIndex], field[emptyIndex + 2]);
     }
 
     if (emptyIndex - 2 >= 0 && field[emptyIndex - 2] == '>')
@@ -68,6 +68,19 @@ std::vector<std::vector<char>> dfs(std::vector<char>& field, int n)
         std::swap(field[emptyIndex], field[emptyIndex - 2]);
     }
 
+    if (emptyIndex - 1 >= 0 && field[emptyIndex - 1] == '>')
+    {
+        std::swap(field[emptyIndex], field[emptyIndex - 1]);
+        auto result = dfs(field, n);
+        if (result.size() > 0)
+        {
+            std::swap(field[emptyIndex], field[emptyIndex - 1]);
+            result.push_back(field);
+            return result;
+        }
+        std::swap(field[emptyIndex], field[emptyIndex - 1]);
+    }
+
     if (emptyIndex + 1 < field.size() && field[emptyIndex + 1] == '<')
     {
         std::swap(field[emptyIndex], field[emptyIndex + 1]);
@@ -81,18 +94,6 @@ std::vector<std::vector<char>> dfs(std::vector<char>& field, int n)
         std::swap(field[emptyIndex], field[emptyIndex + 1]);
     }
 
-    if (emptyIndex + 2 < field.size() && field[emptyIndex + 2] == '<')
-    {
-        std::swap(field[emptyIndex], field[emptyIndex + 2]);
-        auto result = dfs(field, n);
-        if (result.size() > 0)
-        {
-            std::swap(field[emptyIndex], field[emptyIndex + 2]);
-            result.push_back(field);
-            return result;
-        }
-        std::swap(field[emptyIndex], field[emptyIndex + 2]);
-    }
     return {};
 }
 
