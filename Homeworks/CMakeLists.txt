@@ -1,2 +1,5 @@
 add_subdirectory("HW 1")
 add_subdirectory("HW 2")
+add_subdirectory("HW 4")
+add_subdirectory("HW 3")
+add_subdirectory("HW 5")
