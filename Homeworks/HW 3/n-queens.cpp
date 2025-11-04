@@ -1,27 +1,26 @@
 #include <iostream>
+#include <random>
 #include <vector>
 #include <cstdlib>
 #include <unordered_set>
 #include <chrono>
+#include <algorithm>
 
 class Board
 {
 private:
     int n;
     int collisions;
-    std::vector<bool> fields = {};
-    std::unordered_set<int> collisionColumns = {};
     std::vector<int> queensPositions = {};
+    std::vector<int> queensPerRow = {};
+    std::vector<int> queensPerMainDiagonal = {};
+    std::vector<int> queensPerSecondaryDiagonal = {};
 public:
-    explicit Board(int n): n(n), fields(std::vector<bool>(n*n,false)), queensPositions(n, -1)
+    explicit Board(int n): n(n), queensPositions(n, -1), collisions(0), queensPerRow(n, 0),
+                          queensPerMainDiagonal(2 * n - 1, 0), queensPerSecondaryDiagonal(2 * n - 1, 0)
     {
         initializeField();
-        updateCollisions();
-    }
-
-    std::vector<bool>& getFields()
-    {
-        return fields;
+        initializeCollisions();
     }
 
     int getCollisions()
@@ -29,28 +28,18 @@ public:
         return collisions;
     }
 
-    const std::unordered_set<int>& getCollisionColumns()
-    {
-        return collisionColumns;
-    }
-
     void printBoard()
     {
         std::cout<< std::endl;
-        for(int i = 0; i < n; i++)
+        for(int row = 0; row < n; row++)
         {
-            for(int j = 0; j < n; j++)
+            for(int column = 0; column < n; column++)
             {
-                std::cout << (fields[i * n + j] ? "* " : "_ ");
+                std::cout << (queensPositions[column] == row ? "* " : "_ ");
             }
             std::cout << std::endl;
         }
         std::cout<< std::endl;
-    }
-
-    bool setLeastConflictedRowForColumnQueen(int column)
-    {
-        return setLeastConflictedRowForColumnQueen(column, true);
     }
 
     const std::vector<int>& getQueensPositions()
@@ -63,53 +52,111 @@ public:
         return n;
     }
 
+    int getColumnWithMostCollisions()
+    {
+        int maxConflicts = -1;
+        std::vector<int> columnsWithMaxConflicts = {};
+        for (int column = 0; column < n; column++)
+        {
+            int conflicts = numConflicts(column, queensPositions[column]);\
+
+            if (conflicts > maxConflicts)
+            {
+                maxConflicts = conflicts;
+                columnsWithMaxConflicts = {column};
+            }
+            else if (conflicts == maxConflicts)
+            {
+                columnsWithMaxConflicts.push_back(column);
+            }
+        }
+        return columnsWithMaxConflicts[rand() % columnsWithMaxConflicts.size()];
+
+    }
+
+    void updateCollisions()
+    {
+        int currCollisions = 0;
+        for(int row = 0; row < n; row++)
+        {
+            int queensCount = queensPerRow[row];
+            if (queensCount > 1)
+            {
+                currCollisions += (queensCount * (queensCount - 1)) / 2;
+            }
+        }
+
+        for (int d = 0; d < 2 * n - 1; d++)
+        {
+            int queensCountMainDiagonal = queensPerMainDiagonal[d];
+            int queensCountSecondaryDiagonal = queensPerSecondaryDiagonal[d];
+
+            if (queensCountMainDiagonal > 1)
+            {
+                currCollisions += (queensCountMainDiagonal * (queensCountMainDiagonal - 1)) / 2;
+            }
+            if (queensCountSecondaryDiagonal > 1)
+            {
+                currCollisions += (queensCountSecondaryDiagonal * (queensCountSecondaryDiagonal - 1)) / 2;
+            }
+        }
+
+        this->collisions = currCollisions;
+    }
+
+    void setLeastConflictedRowForColumnQueen(int column)
+    {
+        int previousRow = queensPositions[column];
+        int leastConflictIndex = getLeastConflictedRow(column);
+        queensPositions[column] = leastConflictIndex;
+        if (leastConflictIndex == previousRow)
+        {
+            return;
+        }
+        int conflictDiff = 0;
+        queensPerRow[previousRow]--;
+        conflictDiff -= queensPerRow[previousRow];
+        queensPerMainDiagonal[column + previousRow]--;
+        conflictDiff -= queensPerMainDiagonal[column + previousRow];
+        queensPerSecondaryDiagonal[column - previousRow + (n - 1)]--;
+        conflictDiff -= queensPerSecondaryDiagonal[column - previousRow + (n - 1)];
+        queensPerRow[leastConflictIndex]++;
+        conflictDiff += queensPerRow[leastConflictIndex] - 1;
+        queensPerMainDiagonal[column + leastConflictIndex]++;
+        conflictDiff += queensPerMainDiagonal[column + leastConflictIndex] - 1;
+        queensPerSecondaryDiagonal[column - leastConflictIndex + (n - 1)]++;
+        conflictDiff += queensPerSecondaryDiagonal[column - leastConflictIndex + (n - 1)] - 1;
+
+        collisions += conflictDiff;
+    }
+
 private:
     void initializeField()
     {
-        for(int i = 0; i < n; i++)
+        std::vector<int> rows(n, 0);
+        for (int i = 0; i < n; i++)
         {
-//            setLeastConflictedRowForColumnQueen(i, false);
-            int randomRow = rand() % n;
-            fields[randomRow * n + i] = true;
-            queensPositions[i] = randomRow;
+            rows[i] = i;
+        }
+        std::shuffle(rows.begin(), rows.end(), std::mt19937(std::random_device()()));
+        for(int column = 0; column < n; column++)
+        {
+            queensPositions[column] = rows[column];
         }
     }
-    bool setLeastConflictedRowForColumnQueen(int column, bool isSet)
+
+    int numConflicts(int column, int row)
     {
-        if (isSet)
+        bool isQueenHere = (queensPositions[column] == row);
+        if (!isQueenHere)
         {
-            fields[queensPositions[column] * n + column] = false;
+            return queensPerRow[row] +
+                   queensPerMainDiagonal[column + row] +
+                   queensPerSecondaryDiagonal[column - row + (n - 1)];
         }
-
-        int leastConflictIndex = getLeastConflictedRow(column);
-
-        fields[leastConflictIndex * n + column] = true;
-        queensPositions[column] = leastConflictIndex;
-
-
-        return leastConflictIndex != queensPositions[column];
-    }
-
-    bool isConflicted(int column, int row)
-    {
-        for(int j = 0; j < n; j++)
-        {
-            if (fields[row * n + j] && j != column)
-            {
-                return true;
-            }
-            int diag1 = row + (column - j);
-            int diag2 = row - (column - j);
-            if (diag1 >= 0 && diag1 < n && fields[j * n + diag1])
-            {
-                return true;
-            }
-            if (diag2 >= 0 && diag2 < n && fields[j * n + diag2])
-            {
-                return true;
-            }
-        }
-        return false;
+        return (queensPerRow[row] - 1) +
+               (queensPerMainDiagonal[column + row] - 1) +
+               (queensPerSecondaryDiagonal[column - row + (n - 1)] - 1);
     }
 
 
@@ -119,18 +166,7 @@ private:
         int leastConflicts = n * n;
         for(int j = 0; j < n; j++)
         {
-            int conflicts = 0;
-            for(int k = 0; k < n; k++)
-            {
-                if (fields[j * n + k])
-                    conflicts++;
-                int diag1 = j + (column - k);
-                int diag2 = j - (column - k);
-                if (diag1 >= 0 && diag1 < n && fields[k * n + diag1])
-                    conflicts++;
-                if (diag2 >= 0 && diag2 < n && fields[k * n + diag2])
-                    conflicts++;
-            }
+            int conflicts = numConflicts(column, j);
             if (conflicts < leastConflicts)
             {
                 leastConflicts = conflicts;
@@ -144,24 +180,44 @@ private:
         return leastConflictRows[rand() % leastConflictRows.size()];
     }
 
-    void updateCollisions()
+    void initializeCollisions()
     {
-        int currCollisions = 0;
-        for(int i = 0; i < n; i++)
+        for(int row = 0; row < n; row++)
         {
-            int iRow = queensPositions[i];
-            for (int j = i + 1; j < n; j++)
+            int queensCount = 0;
+            for (int col = 0; col < n; col++)
             {
-                int jRow = queensPositions[j];
-                if (iRow == jRow || abs(iRow - jRow) == abs(i - j))
+                if (queensPositions[col] == row)
                 {
-                    currCollisions++;
-                    collisionColumns.insert(i);
-                    collisionColumns.insert(j);
+                    queensCount++;
                 }
             }
+            queensPerRow[row] = queensCount;
         }
-        this->collisions = currCollisions;
+
+        for (int d = 0; d < 2 * n - 1; d++)
+        {
+            int queensCountMainDiagonal = 0;
+            int queensCountSecondaryDiagonal = 0;
+            for (int col = 0; col < n; col++)
+            {
+                int rowMainDiagonal = d - col;
+                if (rowMainDiagonal >= 0 && rowMainDiagonal < n && queensPositions[col] == rowMainDiagonal)
+                {
+                    queensCountMainDiagonal++;
+                }
+
+                int rowSecondaryDiagonal = col - (d - (n - 1));
+                if (rowSecondaryDiagonal >= 0 && rowSecondaryDiagonal < n && queensPositions[col] == rowSecondaryDiagonal)
+                {
+                    queensCountSecondaryDiagonal++;
+                }
+            }
+            queensPerMainDiagonal[d] = queensCountMainDiagonal;
+            queensPerSecondaryDiagonal[d] = queensCountSecondaryDiagonal;
+        }
+
+        updateCollisions();
     }
 };
 
@@ -171,8 +227,10 @@ private:
 public:
     static std::vector<int> solve(Board& board, bool shouldPrint)
     {
-        const int MAX_ITERATIONS = 10000000;
-        int lastMovedIteration = -1;
+        const int MAX_ITERATIONS_MULT = 50000;
+        int MAX_ITERATIONS = MAX_ITERATIONS_MULT * board.getSize();
+        int lastBetteredIteration = -1;
+        int lastCollisions = board.getCollisions();
         for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++)
         {
             if (shouldPrint)
@@ -185,18 +243,18 @@ public:
                 return board.getQueensPositions();
             }
 
-            const std::unordered_set<int>& collisionColumns = board.getCollisionColumns();
-            int randomColumn = getRandomColumn(collisionColumns);
-            bool moved = board.setLeastConflictedRowForColumnQueen(randomColumn);
-            if (moved)
+            int randomColumn = board.getColumnWithMostCollisions();
+            board.setLeastConflictedRowForColumnQueen(randomColumn);
+            if (board.getCollisions() < lastCollisions)
             {
-                lastMovedIteration = iteration;
+                lastBetteredIteration = iteration;
+                lastCollisions = board.getCollisions();
             }
-            else if (iteration - lastMovedIteration > 3 * board.getSize())
+            else if (iteration - lastBetteredIteration > 3 * board.getSize())
             {
                 // Reinitialize the board if no progress is made
                 board = Board(board.getSize());
-                lastMovedIteration = iteration;
+                lastBetteredIteration = iteration;
             }
         }
         return {};
@@ -205,13 +263,6 @@ public:
 
 private:
 
-    static int getRandomColumn(const std::unordered_set<int>& collisionColumns)
-    {
-        int randomIndex = rand() % collisionColumns.size();
-        auto it = collisionColumns.begin();
-        std::advance(it, randomIndex);
-        return *it;
-    }
 };
 
 bool getIsTimeOnly()
