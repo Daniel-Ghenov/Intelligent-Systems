@@ -223,7 +223,6 @@ private:
 
 class Solver
 {
-private:
 public:
     static std::vector<int> solve(Board& board, bool shouldPrint)
     {
@@ -259,10 +258,6 @@ public:
         }
         return {};
     }
-
-
-private:
-
 };
 
 bool getIsTimeOnly()
