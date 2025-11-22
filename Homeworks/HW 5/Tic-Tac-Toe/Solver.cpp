@@ -23,9 +23,9 @@ std::vector<Board> Solver::generateNextBoards(const Board &currentBoard, CellSta
 
 int Solver::generateCurrentBoardScore(const Board &board, CellState player)
 {
-    if (board.checkWin() == player)
+    if (board.checkWin() == CellState::X)
         return 1;
-    else if (board.checkWin() != CellState::EMPTY && board.checkWin() != player)
+    else if (board.checkWin() == CellState::O)
         return -1;
     else
         return 0;
@@ -33,59 +33,100 @@ int Solver::generateCurrentBoardScore(const Board &board, CellState player)
 
 Board Solver::answerBoard(const Board &board)
 {
-    return answerBoard(board, this->player, this->maxDepth);
+    return answerBoard(board, this->player, this->maxDepth, INT_MIN, INT_MAX);
 }
 
-Board Solver::answerBoard(const Board &board, CellState currentPlayer, int depth)
+Board Solver::answerBoard(const Board &board, CellState currentPlayer, int depth, int alpha, int beta)
 {
     std::vector<Board> neighbours = generateNextBoards(board, currentPlayer);
-    int maxScore = INT_MIN;
+    BoardScore maxScore {};
+    if (currentPlayer == CellState::X)
+        maxScore = {INT_MIN, 0};
+    else
+        maxScore = {INT_MAX, 0};
     Board bestBoard;
+    Solver::Player minMaxPlayer = currentPlayer == CellState::X ? Solver::Player::MAX : Solver::Player::MIN;
     for (auto& neighbour : neighbours)
     {
-        int score = -1 * generateBoardScore(neighbour, otherPlayer(currentPlayer), depth);
-        if (score > maxScore)
+        BoardScore boardScore = generateBoardScore(neighbour, otherPlayer(currentPlayer), revertMinMax(minMaxPlayer), depth, alpha, beta);
+        if (better(boardScore, maxScore, minMaxPlayer) == boardScore)
         {
-            maxScore = score;
+            maxScore = boardScore;
             bestBoard = neighbour;
+            alpha = std::max(alpha, boardScore.score);
         }
     }
     return bestBoard;
 }
 
-int Solver::getMaxScoreBoard(CellState player, std::vector<Board> &neighbours)
+Solver::BoardScore Solver::generateBoardScore(const Board &board, CellState currentPlayer, Solver::Player player, int depth, int alpha, int beta)
 {
-    int maxScore = INT_MIN;
-    for (auto& board : neighbours)
+    std::vector<Board> neighbours = generateNextBoards(board, currentPlayer);
+    if (board.checkWin() != CellState::EMPTY || board.isFull() || neighbours.empty() || depth == 0)
     {
-        int currentScore = generateCurrentBoardScore(board, player);
-        if (currentScore > maxScore)
+        return {generateCurrentBoardScore(board, currentPlayer), depth};
+    }
+
+    std::vector<int> neighbourSolutions = std::vector<int>(neighbours.size());
+    BoardScore maxScore {};
+    if (player == Solver::Player::MAX)
+        maxScore = {INT_MIN, 0};
+    else
+        maxScore = {INT_MAX, 0};
+
+    for (int i = 0; i < neighbours.size(); i++)
+    {
+        BoardScore boardScore = generateBoardScore(neighbours[i], otherPlayer(currentPlayer), revertMinMax(player), depth - 1, alpha, beta);
+        maxScore = better(maxScore, boardScore, player);
+
+        if (player == Solver::Player::MAX)
         {
-            maxScore = currentScore;
+            alpha = std::max(alpha, boardScore.score);
         }
+        if (player == Solver::Player::MIN)
+        {
+            beta = std::min(beta, boardScore.score);
+        }
+        if (player == Solver::Player::MIN && maxScore.score < alpha)
+        {
+            break;
+        }
+        if (player == Solver::Player::MAX && maxScore.score > beta)
+        {
+            break;
+        }
+
     }
     return maxScore;
 }
 
-int Solver::generateBoardScore(const Board &board, CellState currentPlayer, int depth)
+Solver::BoardScore Solver::better(const Solver::BoardScore &a, const Solver::BoardScore &b, Solver::Player player)
 {
-    std::vector<Board> neighbours = generateNextBoards(board, currentPlayer);
-    if (board.checkWin() != CellState::EMPTY || board.isFull())
+    if (player == Player::MAX)
     {
-        return generateCurrentBoardScore(board, currentPlayer);
+        if (a.score == b.score)
+        {
+            if (a.score > 0)
+                return a.depth > b.depth ? a : b;
+            else
+                return a.depth < b.depth ? a : b;
+        }
+        return a.score > b.score ? a : b;
     }
-    if (neighbours.empty())
+    else
     {
-        return generateCurrentBoardScore(board, currentPlayer);
+        if (a.score == b.score)
+        {
+            if (a.score > 0)
+                return a.depth < b.depth ? a : b;
+            else
+                return a.depth > b.depth ? a : b;
+        }
+        return a.score < b.score ? a : b;
     }
-    if (depth == 1)
-    {
-        return getMaxScoreBoard(currentPlayer, neighbours);
-    }
-
-    std::vector<int> neighbourSolutions = std::vector<int>(neighbours.size());
-    std::transform(neighbours.begin(), neighbours.end(), neighbourSolutions.begin(),
-                   [this, currentPlayer, depth](Board board) {return -1 * generateBoardScore(board, otherPlayer(currentPlayer), depth - 1);});
-    return *std::max_element(neighbourSolutions.begin(), neighbourSolutions.end());
 }
 
+bool Solver::BoardScore::operator==(const Solver::BoardScore &other) const
+{
+    return score == other.score && depth == other.depth;
+}

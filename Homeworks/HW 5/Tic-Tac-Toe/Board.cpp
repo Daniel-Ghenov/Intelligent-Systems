@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Board.h"
 
+
 Board::Board()
 {
     reset();
@@ -64,14 +65,23 @@ bool Board::isFull() const
 
 void Board::print() const
 {
-    std::cout << std::endl;
+    std::cout << "+---+---+---+" << std::endl;
     for (const auto & row : board) {
-        for (const auto & cell : row) {
-            char toPrint = cellStateToChar(cell);
-            std::cout << toPrint << ' ';
+        std::cout << "| ";
+        for (int j = 0; j < 3; ++j) {
+            std::cout << cellStateToChar(row[j]);
+            if (j < 2) {
+                std::cout << " | ";
+            }
+            else
+            {
+                std::cout << " |" << std::endl;
+            }
         }
-        std::cout << std::endl;
+        std::cout  << "+---+---+---+" << std::endl;
     }
 }
+
+Board::Board(std::array<std::array<CellState, 3>, 3> initialBoard): board(initialBoard) {}
 
 

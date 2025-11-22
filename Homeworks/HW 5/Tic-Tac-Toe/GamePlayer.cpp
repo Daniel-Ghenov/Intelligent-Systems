@@ -1,9 +1,10 @@
 #include <iostream>
 #include "GamePlayer.h"
+#include "Board.h"
+#include "Solver.h"
 
 void GamePlayer::initiateGame()
 {
-    board.reset();
     while(board.checkWin() == CellState::EMPTY && !board.isFull()) {
         if(initiateGameTurn()) {
             break;
@@ -14,10 +15,10 @@ void GamePlayer::initiateGame()
 bool GamePlayer::initiateGameTurn()
 {
     int playerRow, playerCol;
-    std::cout << "Enter your move (row and column): ";
     std::cin >> playerRow >> playerCol;
+    playerRow--;
+    playerCol--;
     while(!board.makeMove(playerRow, playerCol, otherPlayer(solver.getPlayer()))) {
-        std::cout << "Invalid move. Enter your move (row and column): ";
         std::cin >> playerRow >> playerCol;
     }
     printBoard();
@@ -42,8 +43,12 @@ bool GamePlayer::checkWinner() const
 {
     if(board.checkWin() != CellState::EMPTY || board.isFull())
     {
-        std::cout << "Game Over!" << std::endl;
-        std::cout << "Winner: " << cellStateToString(board.checkWin()) << std::endl;
+        if (board.checkWin() == CellState::EMPTY)
+        {
+            std::cout << "DRAW";
+            return true;
+        }
+        std::cout << "WINNER: " << cellStateToChar(board.checkWin()) << std::endl;
         return true;
     }
     return false;
@@ -52,5 +57,44 @@ bool GamePlayer::checkWinner() const
 void GamePlayer::printBoard() const
 {
     board.print();
+}
+
+GamePlayer::GamePlayer(CellState player, CellState firstPlayer)
+{
+    solver = Solver(firstPlayer);
+    if(firstPlayer != player)
+    {
+        Board aiMoveBoard = solver.answerBoard(board);
+        board = aiMoveBoard;
+    }
+}
+
+GamePlayer::GamePlayer(CellState player, CellState firstPlayer, Board initialBoard)
+{
+    solver = Solver(firstPlayer);
+    board = initialBoard;
+    if(firstPlayer != player)
+    {
+        Board aiMoveBoard = solver.answerBoard(board);
+        board = aiMoveBoard;
+        board.print();
+    }
+}
+
+std::pair<int, int> GamePlayer::getNextMove()
+{
+    Board nextBoard = solver.answerBoard(board);
+    for (int i = 0; i < 3; ++i)
+    {
+        for (int j = 0; j < 3; ++j)
+        {
+            if (board.getBoard()[i][j] != nextBoard.getBoard()[i][j])
+            {
+                board = nextBoard;
+                return {i, j};
+            }
+        }
+    }
+    return {-1, -1};
 }
 
