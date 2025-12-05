@@ -58,7 +58,7 @@ public:
         std::vector<int> columnsWithMaxConflicts = {};
         for (int column = 0; column < n; column++)
         {
-            int conflicts = numConflicts(column, queensPositions[column]);\
+            int conflicts = numConflicts(column, queensPositions[column]);
 
             if (conflicts > maxConflicts)
             {

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <array>
-#include <stdexcept>
-#include <string_view>
-
 enum class CellState {
     EMPTY,
     X,
@@ -42,19 +38,3 @@ inline static CellState otherPlayer(CellState player)
 {
     return player == CellState::O ? CellState::X : CellState::O;
 }
-
-class Board {
-private:
-
-    std::array<std::array<CellState, 3>, 3> board{};
-public:
-    Board();
-    Board(std::array<std::array<CellState, 3>, 3> initialBoard);
-    bool makeMove(int row, int col, CellState player);
-    CellState checkWin() const;
-    bool isFull() const;
-    std::array<std::array<CellState, 3>, 3> getBoard() const { return board; }
-    void print() const;
-    void reset();
-
-};

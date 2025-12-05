@@ -1,20 +1,20 @@
 #include <iostream>
-#include "Board.h"
+#include "TTTBoard.h"
 
 
-Board::Board()
+TTTBoard::TTTBoard()
 {
     reset();
 }
 
-void Board::reset()
+void TTTBoard::reset()
 {
     for (auto & i : board)
         for (auto & j : i)
             j = CellState::EMPTY;
 }
 
-bool Board::makeMove(int row, int col, CellState player)
+bool TTTBoard::makeMove(int row, int col, CellState player)
 {
     if (board[row][col] == CellState::EMPTY) {
         board[row][col] = player;
@@ -23,7 +23,7 @@ bool Board::makeMove(int row, int col, CellState player)
     return false;
 }
 
-CellState Board::checkWin() const
+CellState TTTBoard::checkWin() const
 {
     //Rows and Columns
     for (int i = 0; i < 3; ++i) {
@@ -54,7 +54,7 @@ CellState Board::checkWin() const
     return CellState::EMPTY;
 }
 
-bool Board::isFull() const
+bool TTTBoard::isFull() const
 {
     for (const auto & row : board)
         for (const auto & cell : row)
@@ -63,7 +63,7 @@ bool Board::isFull() const
     return true;
 }
 
-void Board::print() const
+void TTTBoard::print() const
 {
     std::cout << "+---+---+---+" << std::endl;
     for (const auto & row : board) {
@@ -82,6 +82,6 @@ void Board::print() const
     }
 }
 
-Board::Board(std::array<std::array<CellState, 3>, 3> initialBoard): board(initialBoard) {}
+TTTBoard::TTTBoard(std::array<std::array<CellState, 3>, 3> initialBoard): board(initialBoard) {}
 
 

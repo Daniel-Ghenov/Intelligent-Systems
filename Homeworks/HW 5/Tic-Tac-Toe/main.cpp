@@ -1,8 +1,8 @@
 #include <iostream>
 #include <limits>
-#include "GamePlayer.h"
-#include "Board.h"
-#include "Solver.h"
+#include "TTTGamePlayer.h"
+#include "TTTBoard.h"
+#include "TTTSolver.h"
 
 enum class SolverMode {
     JUDGE,
@@ -45,13 +45,13 @@ int main()
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
-        Board board(boardState);
+        TTTBoard board(boardState);
         if (board.isFull() || board.checkWin() != CellState::EMPTY)
         {
             std::cout << -1;
             return 0;
         }
-        GamePlayer judgePlayer(player, boardState);
+        TTTGamePlayer judgePlayer(player, board);
 
         std::pair<int, int> nextMove = judgePlayer.getNextMove();
         std::cout << nextMove.first + 1 << " " << nextMove.second + 1;
@@ -79,7 +79,7 @@ int main()
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     }
 
-    GamePlayer gamePlayer (humanPlayer, firstPlayer, boardState);
+    TTTGamePlayer gamePlayer (humanPlayer, firstPlayer, TTTBoard(boardState));
     gamePlayer.initiateGame();
 
     return 0;
