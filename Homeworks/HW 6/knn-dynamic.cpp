@@ -17,15 +17,15 @@ static std::mt19937 rng = std::mt19937(std::random_device()());
 
 struct Point
 {
-    std::array<float, DIMENSIONS_COUNT> coordinates;
+    std::array<double, DIMENSIONS_COUNT> coordinates;
     std::string name;
 
-    float operator[](int index) const
+    double operator[](int index) const
     {
         return coordinates[index];
     }
 
-    float& operator[](int index)
+    double& operator[](int index)
     {
         return coordinates[index];
     }
@@ -47,12 +47,12 @@ bool isLessInDimension(const Point& a, const Point& b, int dimension)
     return a[dimension] < b[dimension];
 }
 
-float dist(const Point& a, const Point& b)
+double dist(const Point& a, const Point& b)
 {
-    float sum = 0.0f;
+    double sum = 0.0f;
     for (int i = 0; i < DIMENSIONS_COUNT; ++i)
     {
-        float diff = a[i] - b[i];
+        double diff = a[i] - b[i];
         sum += diff * diff;
     }
     return sum;
@@ -151,14 +151,14 @@ public:
         {
             return {};
         }
-        std::priority_queue<std::pair<float, Point>> pq;
+        std::priority_queue<std::pair<double, Point>> pq;
 
         while(!found.empty())
         {
             Node* current = found.top();
             found.pop();
 
-            float currentDist = dist(current->value, point);
+            double currentDist = dist(current->value, point);
             if (pq.size() < k)
             {
                 pq.emplace(currentDist, current->value);
@@ -170,7 +170,7 @@ public:
             }
 
             int dimension = current->depth % DIMENSIONS_COUNT;
-            float diff = point[dimension] - current->value[dimension];
+            double diff = point[dimension] - current->value[dimension];
 
             if (diff * diff < pq.top().first)
             {
@@ -280,10 +280,10 @@ class KNNClassifier
 private:
     KDTree* tree = nullptr;
     int k;
-    std::array<float, DIMENSIONS_COUNT> means;
-    std::array<float, DIMENSIONS_COUNT> stdDevs;
-    std::array<float, DIMENSIONS_COUNT> mins;
-    std::array<float, DIMENSIONS_COUNT> maxs;
+    std::array<double, DIMENSIONS_COUNT> means;
+    std::array<double, DIMENSIONS_COUNT> stdDevs;
+    std::array<double, DIMENSIONS_COUNT> mins;
+    std::array<double, DIMENSIONS_COUNT> maxs;
 public:
     KNNClassifier(const std::vector<Point>& trainPoints, int k)
     {
@@ -386,7 +386,7 @@ private:
         {
             for (int i = 0; i < DIMENSIONS_COUNT; i++)
             {
-                float diff = point[i] - means[i];
+                double diff = point[i] - means[i];
                 stdDevs[i] += diff * diff;
             }
         }
@@ -488,9 +488,9 @@ int main()
             trainCorrectCount++;
         }
     }
-    float trainAccuracy = (float)trainCorrectCount / trainSet.size() * 100.0f;
+    double trainAccuracy = (double)trainCorrectCount / trainSet.size() * 100.0f;
 
-    std::vector<float> foldAccuracies;
+    std::vector<double> foldAccuracies;
     for (int i = 0; i < FOLDS; i++)
     {
         std::vector<Point> validationSet = folds[i];
@@ -512,23 +512,23 @@ int main()
                 correctCount++;
             }
         }
-        float foldAccuracy = (float)correctCount / validationSet.size() * 100.0f;
+        double foldAccuracy = (double)correctCount / validationSet.size() * 100.0f;
         foldAccuracies.push_back(foldAccuracy);
     }
-    float sumAccuracies = 0.0f;
+    double sumAccuracies = 0.0f;
     for (const auto& acc : foldAccuracies)
     {
         sumAccuracies += acc;
     }
-    float averageAccuracy = sumAccuracies / FOLDS;
+    double averageAccuracy = sumAccuracies / FOLDS;
 
-    float variance = 0.0f;
+    double variance = 0.0f;
     for (const auto& acc : foldAccuracies)
     {
         variance += (acc - averageAccuracy) * (acc - averageAccuracy);
     }
     variance /= FOLDS;
-    float stdDeviation = std::sqrt(variance);
+    double stdDeviation = std::sqrt(variance);
 
     std::cout << "1. Train Set Accuracy:" << std::endl;
     std::cout << "    Accuracy: " << trainAccuracy << "%" << std::endl << std::endl;
@@ -549,7 +549,7 @@ int main()
             testCorrectCount++;
         }
     }
-    float testAccuracy = (float)testCorrectCount / testSet.size() * 100.0f;
+    double testAccuracy = (double)testCorrectCount / testSet.size() * 100.0f;
     std::cout << "3. Test Set Accuracy:" << std::endl;
     std::cout << "    Accuracy: " << testAccuracy << "%" << std::endl;
 
