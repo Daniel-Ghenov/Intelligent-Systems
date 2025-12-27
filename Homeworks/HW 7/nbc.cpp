@@ -78,13 +78,14 @@ class NBClassifier
 private:
     int numFeatures;
     bool isQuestionAbstain;
+    double laplaceLambda = 1.0;
     std::unordered_map<std::string, double> classProbabilities;
     std::unordered_map<char, int> featureToIndex;
     std::unordered_map<std::string, std::vector<std::vector<double>>> featureGivenClassProbabilities;
 
 public:
 
-    NBClassifier(const std::vector<Point>& datapoints, bool isQuestionAbstain, int numFeatures): isQuestionAbstain(isQuestionAbstain), numFeatures(numFeatures)
+    NBClassifier(const std::vector<Point>& datapoints, bool isQuestionAbstain, int numFeatures, double laplaceLambda): isQuestionAbstain(isQuestionAbstain), numFeatures(numFeatures), laplaceLambda(laplaceLambda)
     {
         train(datapoints);
     }
@@ -125,7 +126,7 @@ private:
         int totalPoints = datapoints.size();
         for (const auto& pair : classCounts)
         {
-            classProbabilities[pair.first] = std::log(static_cast<double>(pair.second) / (double) totalPoints);
+            classProbabilities[pair.first] = std::log((static_cast<double>(pair.second) + laplaceLambda) / (double)(totalPoints + laplaceLambda * classCounts.size()));
         }
     }
 
@@ -218,7 +219,8 @@ private:
                 for (const auto& featurePair : featureToIndex)
                 {
                     featureGivenClassProbabilities[classLabel][i][featurePair.second] = std::log(
-                            static_cast<double>(featureGivenClassCounts[classLabel][i][featurePair.second]) / (double) totalClassCount);
+                            (static_cast<double>(featureGivenClassCounts[classLabel][i][featurePair.second]) + laplaceLambda) /
+                            (double)(totalClassCount + laplaceLambda * featureToIndex.size()));
                 }
             }
         }
@@ -247,7 +249,9 @@ int main()
     std::cin >> mode;
     isQuestionAbstain = (mode == 0);
 
-    std::ifstream dataFile("../../../Homeworks/HW 7/Test/house-votes-84.data");
+    double laplaceLambda = 1.0;
+    std::cin >> laplaceLambda;
+    std::ifstream dataFile("house-votes-84.data");
     if (!dataFile.is_open())
     {
         std::cerr << "Could not open the training data file." << std::endl;
@@ -276,7 +280,7 @@ int main()
 
     std::vector<std::vector<Point>> folds = fold(trainSet, FOLDS);
 
-    NBClassifier classifier(trainSet, isQuestionAbstain, NUM_FEATURES);
+    NBClassifier classifier(trainSet, isQuestionAbstain, NUM_FEATURES, laplaceLambda);
     std::vector<std::string> predictions;
     int trainCorrectCount = 0;
     for (const auto& point : trainSet)
@@ -305,7 +309,7 @@ int main()
         }
 
 
-        NBClassifier foldClassifier(trainSet, isQuestionAbstain, NUM_FEATURES);
+        NBClassifier foldClassifier(trainSet, isQuestionAbstain, NUM_FEATURES, laplaceLambda);
         int correctCount = 0;
         for (const auto& point : validationSet)
         {
